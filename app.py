@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect
 app = Flask(__name__)
 
 # --- Settings ---
-ADMIN_PASSWORD = "1234" # උඹේ පාස්වර්ඩ් එක
+ADMIN_PASSWORD = "5555" # උඹේ පාස්වර්ඩ් එක
 captured_logs = []
 
 def get_ip_info(ip):
